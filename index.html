@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🀄 麻將紀錄</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang TC','Microsoft JhengHei',sans-serif;background:#f5f4f0;color:#1a1a18;min-height:100vh}
+.wrap{max-width:480px;margin:0 auto;padding:1.25rem 1rem 3rem}
+h1{font-size:22px;font-weight:500;margin-bottom:1.25rem}
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1.25rem}
+.metric{background:#fff;border-radius:10px;padding:.625rem .5rem;text-align:center;border:0.5px solid #e0ddd5}
+.metric-label{font-size:11px;color:#888;margin-bottom:3px}
+.metric-value{font-size:19px;font-weight:500}
+.metric-value.pos{color:#1D9E75}.metric-value.neg{color:#E24B4A}
+
+.live-section{background:#fff;border:0.5px solid #e0ddd5;border-radius:14px;padding:1.25rem;margin-bottom:1rem}
+.section-title{font-size:14px;font-weight:500;color:#666;margin-bottom:1rem;display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:#1D9E75;display:inline-block;animation:blink 1.2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+.money-row{display:flex;align-items:center;gap:8px;margin-bottom:1rem}
+.money-row label{font-size:13px;color:#666;white-space:nowrap}
+.money-row input{flex:1;min-width:0;border:0.5px solid #d0cec8;border-radius:8px;padding:8px 10px;font-size:15px;background:#fff;color:#1a1a18;outline:none}
+.money-row input:focus{border-color:#888}
+
+.tap-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem}
+.tap-btn{border:0.5px solid #d0cec8;border-radius:14px;background:#fafaf8;padding:14px 10px;cursor:pointer;text-align:center;transition:transform .1s,background .1s;-webkit-tap-highlight-color:transparent;user-select:none}
+.tap-btn:active{transform:scale(.94);background:#f0efe9}
+.tap-btn .icon{font-size:26px;margin-bottom:4px}
+.tap-btn .name{font-size:13px;font-weight:500;color:#333}
+.tap-btn .count{font-size:26px;font-weight:500;margin:4px 0 2px;transition:transform .15s}
+.tap-btn .hint{font-size:11px;color:#aaa}
+.tap-zm{border-color:#5DCAA5}.tap-zm .count{color:#1D9E75}
+.tap-gzm{border-color:#EF9F27}.tap-gzm .count{color:#BA7517}
+.tap-hp{border-color:#85B7EB}.tap-hp .count{color:#185FA5}
+.tap-fq{border-color:#F0997B}.tap-fq .count{color:#D85A30}
+
+.undo-row{display:flex;gap:6px;flex-wrap:wrap}
+.undo-btn{font-size:12px;padding:5px 10px;border:0.5px solid #d0cec8;border-radius:8px;background:#fafaf8;color:#666;cursor:pointer}
+.undo-btn:hover{background:#f0efe9}
+.undo-reset{color:#E24B4A}
+
+.save-btn{width:100%;padding:12px;font-size:15px;font-weight:500;cursor:pointer;border:0.5px solid #c0bdb5;border-radius:10px;background:#f0efe9;color:#1a1a18;margin-bottom:1.25rem}
+.save-btn:hover{background:#e8e7e0}
+.save-btn:active{transform:scale(.98)}
+
+.records-section h2{font-size:15px;font-weight:500;margin-bottom:.75rem}
+.record-item{background:#fff;border:0.5px solid #e0ddd5;border-radius:12px;padding:.875rem 1rem;margin-bottom:8px;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:start}
+.record-date{font-size:12px;color:#aaa}
+.record-win{font-size:16px;font-weight:500}
+.record-win.pos{color:#1D9E75}.record-win.neg{color:#E24B4A}
+.record-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+.tag{font-size:11px;padding:2px 8px;border-radius:99px;border:0.5px solid}
+.tag-zm{background:#E1F5EE;color:#0F6E56;border-color:#5DCAA5}
+.tag-gzm{background:#FAEEDA;color:#633806;border-color:#EF9F27}
+.tag-hp{background:#E6F1FB;color:#0C447C;border-color:#85B7EB}
+.tag-fq{background:#FAECE7;color:#712B13;border-color:#F0997B}
+.del-btn{background:none;border:none;cursor:pointer;color:#bbb;font-size:20px;line-height:1;padding:0}
+.del-btn:hover{color:#E24B4A}
+.empty{text-align:center;padding:2rem;color:#aaa;font-size:14px}
+
+.flash{animation:flash .2s ease}
+@keyframes flash{0%{transform:scale(1.35)}100%{transform:scale(1)}}
+
+@media(prefers-color-scheme:dark){
+  body{background:#1c1c1a;color:#e8e6e0}
+  .metric,.live-section,.record-item{background:#2a2a28;border-color:#3a3a38}
+  .metric-label,.section-title{color:#888}
+  .tap-btn{background:#232321;border-color:#3a3a38;color:#e8e6e0}
+  .tap-btn:active{background:#2e2e2c}
+  .money-row input{background:#232321;border-color:#3a3a38;color:#e8e6e0}
+  .undo-btn{background:#232321;border-color:#3a3a38;color:#aaa}
+  .undo-btn:hover{background:#2e2e2c}
+  .save-btn{background:#2e2e2c;border-color:#3a3a38;color:#e8e6e0}
+  .save-btn:hover{background:#363634}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🀄 麻將紀錄</h1>
+
+  <div class="summary-grid">
+    <div class="metric"><div class="metric-label">總場次</div><div class="metric-value" id="s-games">0</div></div>
+    <div class="metric"><div class="metric-label">總輸贏</div><div class="metric-value" id="s-total">0</div></div>
+    <div class="metric"><div class="metric-label">自摸累計</div><div class="metric-value" id="s-zm">0</div></div>
+    <div class="metric"><div class="metric-label">放槍累計</div><div class="metric-value" id="s-fq">0</div></div>
+  </div>
+
+  <div class="live-section">
+    <div class="section-title"><span class="dot"></span> 本場進行中</div>
+    <div class="money-row">
+      <label>本場輸贏</label>
+      <input type="number" id="f-money" placeholder="正數贏 / 負數輸">
+    </div>
+    <div class="tap-grid">
+      <button class="tap-btn tap-zm" onclick="tap('zm')">
+        <div class="icon">🏆</div>
+        <div class="name">自摸</div>
+        <div class="count" id="c-zm">0</div>
+        <div class="hint">點一下 +1</div>
+      </button>
+      <button class="tap-btn tap-gzm" onclick="tap('gzm')">
+        <div class="icon">😅</div>
+        <div class="name">被自摸</div>
+        <div class="count" id="c-gzm">0</div>
+        <div class="hint">點一下 +1</div>
+      </button>
+      <button class="tap-btn tap-hp" onclick="tap('hp')">
+        <div class="icon">🎉</div>
+        <div class="name">胡牌</div>
+        <div class="count" id="c-hp">0</div>
+        <div class="hint">點一下 +1</div>
+      </button>
+      <button class="tap-btn tap-fq" onclick="tap('fq')">
+        <div class="icon">💸</div>
+        <div class="name">放槍</div>
+        <div class="count" id="c-fq">0</div>
+        <div class="hint">點一下 +1</div>
+      </button>
+    </div>
+    <div class="undo-row">
+      <button class="undo-btn" onclick="undo('zm')">↩ 自摸</button>
+      <button class="undo-btn" onclick="undo('gzm')">↩ 被自摸</button>
+      <button class="undo-btn" onclick="undo('hp')">↩ 胡牌</button>
+      <button class="undo-btn" onclick="undo('fq')">↩ 放槍</button>
+      <button class="undo-btn undo-reset" onclick="resetLive()">✕ 清空本場</button>
+    </div>
+  </div>
+
+  <button class="save-btn" onclick="saveRecord()">完場，儲存本場紀錄 →</button>
+
+  <div class="records-section">
+    <h2>歷史紀錄</h2>
+    <div id="record-list"></div>
+  </div>
+</div>
+
+<script>
+let live={zm:0,gzm:0,hp:0,fq:0};
+let records=[];
+try{const s=localStorage.getItem('mj_records_v2');if(s)records=JSON.parse(s);}catch(e){}
+
+function save(){try{localStorage.setItem('mj_records_v2',JSON.stringify(records));}catch(e){}}
+
+function tap(k){
+  live[k]++;
+  const el=document.getElementById('c-'+k);
+  el.textContent=live[k];
+  el.classList.remove('flash');
+  void el.offsetWidth;
+  el.classList.add('flash');
+}
+
+function undo(k){
+  if(live[k]>0){live[k]--;document.getElementById('c-'+k).textContent=live[k];}
+}
+
+function resetLive(){
+  if(!confirm('確定清空本場所有數據？'))return;
+  live={zm:0,gzm:0,hp:0,fq:0};
+  ['zm','gzm','hp','fq'].forEach(k=>document.getElementById('c-'+k).textContent=0);
+  document.getElementById('f-money').value='';
+}
+
+function fmt(n){return(n>=0?'+':'')+n;}
+
+function saveRecord(){
+  const money=parseInt(document.getElementById('f-money').value||0);
+  const now=new Date();
+  const date=now.toLocaleDateString('zh-TW',{year:'numeric',month:'2-digit',day:'2-digit'});
+  records.unshift({id:Date.now(),date,money,...live});
+  save();
+  resetLive();
+  document.getElementById('f-money').value='';
+  renderSummary();
+  renderList();
+}
+
+function del(id){
+  if(!confirm('確定刪除這筆紀錄？'))return;
+  records=records.filter(r=>r.id!==id);
+  save();
+  renderSummary();
+  renderList();
+}
+
+function renderSummary(){
+  const total=records.reduce((a,r)=>a+r.money,0);
+  document.getElementById('s-games').textContent=records.length;
+  const t=document.getElementById('s-total');
+  t.textContent=fmt(total);
+  t.className='metric-value '+(total>=0?'pos':'neg');
+  document.getElementById('s-zm').textContent=records.reduce((a,r)=>a+r.zm,0);
+  document.getElementById('s-fq').textContent=records.reduce((a,r)=>a+r.fq,0);
+}
+
+function renderList(){
+  const list=document.getElementById('record-list');
+  if(!records.length){list.innerHTML='<div class="empty">還沒有完場紀錄</div>';return;}
+  list.innerHTML=records.map(r=>`
+    <div class="record-item">
+      <div>
+        <div class="record-date">${r.date}</div>
+        <div class="record-win ${r.money>=0?'pos':'neg'}">${fmt(r.money)}</div>
+      </div>
+      <div class="record-tags">
+        ${r.zm?`<span class="tag tag-zm">自摸 ${r.zm}</span>`:''}
+        ${r.gzm?`<span class="tag tag-gzm">被自摸 ${r.gzm}</span>`:''}
+        ${r.hp?`<span class="tag tag-hp">胡牌 ${r.hp}</span>`:''}
+        ${r.fq?`<span class="tag tag-fq">放槍 ${r.fq}</span>`:''}
+      </div>
+      <button class="del-btn" onclick="del(${r.id})">×</button>
+    </div>
+  `).join('');
+}
+
+renderSummary();
+renderList();
+</script>
+</body>
+</html>
